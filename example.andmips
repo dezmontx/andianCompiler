@@ -1,0 +1,67 @@
+.data
+pointerHeap: .word 0
+heap:  .space  100000
+floats:  .float 
+.text
+jal func_main
+addi $sp, $sp, -4
+li $v0, 10
+syscall
+func_main:
+sw $ra, 0($sp)
+addi $sp, $sp, 4
+func_c:
+sw $ra, 0($sp)
+unrecognized operation here
+addi $sp, $sp, 8
+func_a:
+sw $ra, 0($sp)
+unrecognized operation here
+unrecognized operation here
+unrecognized operation here
+add $t6, $t6, $t7
+unrecognized operation here
+lw $t5, 0($t5)
+unrecognized operation here
+unrecognized operation here
+unrecognized operation here
+unrecognized operation here
+beq $t0, $zero, $L0_false:
+unrecognized operation here
+sw $t0 , 4($sp)
+j $L0_end:
+$L0_false:
+unrecognized operation here
+sw $t0 , 4($sp)
+$L0_end:
+unrecognized operation here
+sw $t0 , 4($sp)
+$L1_start:
+unrecognized operation here
+unrecognized operation here
+beq $t0, $zero, $L1_end:
+unrecognized operation here
+unrecognized operation here
+sw $t0 , 4($sp)
+j $L1_start:
+$L1_end:
+unrecognized operation here
+unrecognized operation here
+unrecognized operation here
+bgt $t1, $zero, $L2_0:
+j $L2_end:
+$L2_0:
+unrecognized operation here
+bgt $t1, $zero, $L2_1:
+unrecognized operation here
+unrecognized operation here
+move $a0, $t7
+jar func_c
+unrecognized operation here
+unrecognized operation here
+unrecognized operation here
+sw $t0 , 4($sp)
+j $L2_end:
+$L2_1:
+$L2_end:
+addi $sp, $sp, 12
