@@ -1,7 +1,9 @@
 package parser;
 
+import beans.id.VarId;
 import beans.node.*;
 import beans.node.exp.ExpNode;
+import beans.node.exp.IdNode;
 import beans.type.ArrayType;
 import beans.type.PrimitiveType;
 import beans.type.StructType;
@@ -164,7 +166,7 @@ public class LLVMGenerator {
             llvm += "; <label>:" + currentIndex + ":" +"\n";
             llvm = llvm.replace(Long.toString(startElseIndex), Long.toString(currentIndex));
             currentIndex++;
-            generateStatementList(statement.ifBranch);
+            generateStatementList(statement.elseBranch);
             llvm += "br label %" + end  +"\n";
 
             llvm += "; <label>:" + currentIndex++ + ":" +"\n";
@@ -278,7 +280,16 @@ public class LLVMGenerator {
     }
 
     private static void generateAssignment(AssignNode assignNode) {
+        if(assignNode.lval.operands.size() == 1) {
+            generateExpression(assignNode.rval);
+            llvm += "store " + getType(assignNode.rval.getTypeExp()) + " %" + currentIndex + ", " +
+                    getPointerForType(assignNode.rval.getTypeExp()) + " %" + ((VarId)((IdNode)assignNode.lval.operands.get(0)).id).index
+                    + "," + getAlignForType(assignNode.rval.getTypeExp()) + "\n";
+            currentIndex++;
+        } else {
 
+            // ТУТ НАЧИНАЕТСЯ ПОЛНЫЙ ПИЗДЕЦ
+        }
     }
 
     private static void generateContinue() {
