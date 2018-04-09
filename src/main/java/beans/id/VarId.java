@@ -7,6 +7,7 @@ import beans.type.TypeVar;
  */
 public class VarId extends IdRow {
     public TypeVar type;
+    public int index;
     public boolean isInitialised;
     public int offset;
 }
