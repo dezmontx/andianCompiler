@@ -134,7 +134,7 @@ public class GrammarParser {
         if (tokens.size() < 3)
             throw new GrammarRecognizeException("Grammar error: incorrect structure declaration, line " + getLineError());
 
-        if(tokens.size() >= 3) {
+        if (tokens.size() >= 3) {
             if (tokens.get(0).getType() == TokenEnum.STRUCT && tokens.get(1).getType() == TokenEnum.ID && tokens.get(2).getType() == TokenEnum.OPENBRACE) {
 
                 if(tableId.lookupUserIdTable(tokens.get(1).getValue(), StructId.class) != null) {
@@ -149,6 +149,7 @@ public class GrammarParser {
                 StructId idRow = new StructId();
                 idRow.name = tokens.get(1).getValue();
                 idRow.properties = props;
+                tableId.getIds().add(idRow);
 
                 removeFirstTokenSeveralTimes(3);
 
@@ -159,7 +160,6 @@ public class GrammarParser {
                 if (tokens.size() == 0 || tokens.get(0).getType() != TokenEnum.CLOSEBRACE) {
                     throw new GrammarRecognizeException("Grammar error: incorrect structure declaration, line " + getLineError());
                 } else {
-                    tableId.getIds().add(idRow);
                     DeclareStructNode node = new DeclareStructNode(idRow, AbstractNode.STRUCT);
                     nodes.add(node);
                     removeFirstTokenSeveralTimes(1);

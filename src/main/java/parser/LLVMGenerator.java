@@ -1,8 +1,10 @@
 package parser;
 
+import beans.id.IdRow;
 import beans.id.VarId;
 import beans.node.*;
 import beans.node.exp.ExpNode;
+import beans.node.exp.FieldNode;
 import beans.node.exp.IdNode;
 import beans.type.ArrayType;
 import beans.type.PrimitiveType;
@@ -280,15 +282,73 @@ public class LLVMGenerator {
     }
 
     private static void generateAssignment(AssignNode assignNode) {
+        generateExpression(assignNode.rval);
+        int expIndex = currentIndex;
+
         if(assignNode.lval.operands.size() == 1) {
-            generateExpression(assignNode.rval);
             llvm += "store " + getType(assignNode.rval.getTypeExp()) + " %" + currentIndex + ", " +
                     getPointerForType(assignNode.rval.getTypeExp()) + " %" + ((VarId)((IdNode)assignNode.lval.operands.get(0)).id).index
                     + "," + getAlignForType(assignNode.rval.getTypeExp()) + "\n";
             currentIndex++;
         } else {
+            int indexBase = ++currentIndex;
+            TypeVar typeVar = ((VarId)((IdNode)assignNode.lval.operands.get(0)).id).type;
+            llvm += "%" + indexBase + " = load " + getType(typeVar) + ", " + getPointerForType(typeVar)
+                    + " %" + ((VarId) ((IdNode)assignNode.lval.operands.get(0)).id).index + ", " + getAlignForType(typeVar) + "\n";
 
-            // ТУТ НАЧИНАЕТСЯ ПОЛНЫЙ ПИЗДЕЦ
+            currentIndex++;
+
+            assignNode.lval.operands.remove(0);
+            int curLevelOfArray = 1;
+
+            for(ExpNode exp : assignNode.lval.operands) {
+                if(exp instanceof FieldNode) {
+                    FieldNode field = (FieldNode)exp;
+                    String type = "";
+                    String typePointer = "";
+
+                    if(typeVar instanceof ArrayType) {
+                        type = getType(typeVar).replaceAll("\\*", "");
+                        typePointer = type + "*";
+                    } else {
+                        type = getType(typeVar);
+                        typePointer = getPointerForType(typeVar);
+                    }
+
+                    llvm += "%" + currentIndex + " = getelementptr inbounds " + type + ", "
+                            + typePointer + " %" + indexBase + ", i32 0, i32 " +  field.getOrderNumber() + "\n";
+
+                    typeVar = exp.getTypeExp();
+                    indexBase = currentIndex++;
+                    curLevelOfArray = 1;
+                } else {
+                    generateExpression(exp);
+                    int indexExp = currentIndex++;
+                    llvm += "%" + currentIndex + " = sext i32 %" + indexExp + " to i64\n";
+                    indexExp = currentIndex++;
+                    llvm += "%" + currentIndex + " = getelementptr inbounds " + getType(typeVar, curLevelOfArray) + ", "
+                    + getPointerForType(typeVar, curLevelOfArray) + " %" + indexBase + ", i64" + " %" + indexExp + "\n";
+
+                    String type = getType(typeVar, curLevelOfArray);
+
+                    if(!(type.replace("*", "").equals(type))) {
+                        indexExp = currentIndex++;
+
+                        llvm += "%" + currentIndex + " = load " + getType(typeVar, curLevelOfArray) + ", "
+                                + getPointerForType(typeVar, curLevelOfArray) + " %" + indexExp
+                                + " align " + (type.replace("*", "").equals(type) ? "4\n" : "8\n");
+
+                    }
+
+                    indexBase = currentIndex++;
+
+                    curLevelOfArray++;
+                }
+            }
+
+            llvm += "store " + getType(assignNode.rval.getTypeExp()) + " %" + expIndex + ", " +
+                    getPointerForType(assignNode.rval.getTypeExp()) + " %" + indexBase
+                    + "," + getAlignForType(assignNode.rval.getTypeExp()) + "\n";
         }
     }
 
@@ -373,6 +433,18 @@ public class LLVMGenerator {
         }
 
         return null;
+    }
+
+    private static String getType(TypeVar type, int countAsterisks) {
+        String strType = getType(type);
+
+        return strType.substring(0, strType.length() - countAsterisks);
+    }
+
+    private static String getPointerForType(TypeVar type, int countAsterisks) {
+        String strType = getType(type);
+
+        return strType.substring(0, strType.length() - countAsterisks + 1);
     }
 
     private static void generateReturn(ControlNode node) {
