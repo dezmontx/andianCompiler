@@ -22,7 +22,7 @@ public class LLVMGenerator {
     public static void generateLLVM(List<AbstractNode> list) {
         for(AbstractNode node : list) {
             if(node instanceof DeclareFuncNode) {
-                currentIndex = 0;
+                currentIndex = 1;
                 curFunction = ((DeclareFuncNode) node);
                 generateFunction((DeclareFuncNode)node);
             }
@@ -49,6 +49,16 @@ public class LLVMGenerator {
                 + "{\n";
 
         currentIndex += funcNode.getId().properties.size();
+
+        for(Map.Entry<TypeVar, String> prop : funcNode.getId().properties.entrySet()) {
+            llvm += "%" + currentIndex + " = alloca " + getType(prop.getKey()) + ", " + getAlignForType(prop.getKey()) + "\n";
+            llvm += "store " + getType(prop.getKey()) + " %" + (currentIndex - funcNode.getId().properties.size() - 1)
+                    + ", " + getPointerForType(prop.getKey()) + " %" + currentIndex + " ," + getAlignForType(prop.getKey()) + "\n";
+
+            ((VarId)funcNode.getId().propIds.get(prop.getValue())).index = currentIndex;
+
+            currentIndex++;
+        }
 
         generateStatementList(funcNode.getStatementNodes());
 
@@ -136,6 +146,10 @@ public class LLVMGenerator {
 
         if(statement.typeNode == AbstractNode.DECLARE_VAR_NODE) {
             generateDeclaration((DeclareVarNode)statement);
+        }
+
+        if(statement.typeNode == AbstractNode.FUNC_CALL_NODE) {
+
         }
     }
 
@@ -261,7 +275,6 @@ public class LLVMGenerator {
     }
 
     private static void generateDeclaration(DeclareVarNode declareVarNode) {
-        // %1 = alloca i32, align 4
         llvm += "%" + currentIndex + " = alloca " + getType(declareVarNode.type) + ", ";
 
         llvm += getAlignForType(declareVarNode.type) + "\n";
@@ -272,8 +285,6 @@ public class LLVMGenerator {
 
         if(declareVarNode.expNode != null) {
             generateExpression(declareVarNode.expNode);
-            // store i32* %3,
-            // i32** %1, align 8
             llvm += "store " + getType(declareVarNode.type) + " %" + currentIndex + ", "
                     + getPointerForType(declareVarNode.type) + " %" + declareVarNode.var.index + ", " + getAlignForType(declareVarNode.type) + "\n";
 
@@ -448,7 +459,7 @@ public class LLVMGenerator {
     }
 
     private static void generateReturn(ControlNode node) {
-        llvm += "return " + getType(node.exp.getTypeExp()) + " %" + currentIndex + "\n";
+        llvm += "ret " + getType(node.exp.getTypeExp()) + " %" + currentIndex + "\n";
     }
 
     private static String getType(String exp) {

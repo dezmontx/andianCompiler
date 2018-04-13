@@ -186,15 +186,16 @@ public class GrammarParser {
             }
 
             LinkedHashMap<TypeVar, String> props = new LinkedHashMap<TypeVar, String>();
+            LinkedHashMap<String, IdRow> propIds = new LinkedHashMap<String, IdRow>();
             FuncId row = new FuncId();
             row.name = tokens.get(0).getValue();
             row.returnType = type;
             row.properties = props;
+            row.propIds = propIds;
 
             if(row.name.equals("main")) {
                 mainFunc = row;
             }
-
 
             TranslatorTAC.createFuncLabelTAC(row.name);
 
@@ -202,7 +203,7 @@ public class GrammarParser {
 
             if(tokens.get(0).getType() != TokenEnum.CLOSEPAREN) {
                 while(tokens.size() > 0 && tokens.get(0).getType() != TokenEnum.CLOSEPAREN) {
-                    tryToRecognizeArgumentInList(props);
+                    tryToRecognizeArgumentInList(props, propIds);
                 }
 
                 if(tokens.get(0).getType() == TokenEnum.CLOSEPAREN) {
@@ -231,6 +232,7 @@ public class GrammarParser {
                     rowVar.name = var.getValue();
                     rowVar.type = var.getKey();
                     tableId.getIds().add(rowVar);
+                    currentFunction.getId().propIds.put(var.getValue(), rowVar);
 
                     rowVar.offset = offset;
                     offset += 4;
@@ -1830,7 +1832,7 @@ public class GrammarParser {
     }
 
     //COMPLETE
-    private void tryToRecognizeArgumentInList(LinkedHashMap<TypeVar, String> props) throws GrammarRecognizeException, SyntaxException, IndexOutOfBoundsException {
+    private void tryToRecognizeArgumentInList(LinkedHashMap<TypeVar, String> props, LinkedHashMap<String, IdRow> propIds) throws GrammarRecognizeException, SyntaxException, IndexOutOfBoundsException {
         TypeVar type = tryToRecognizeType(false);
 
         if(tokens.get(0).getType() == TokenEnum.ID) {
