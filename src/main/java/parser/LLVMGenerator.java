@@ -279,20 +279,48 @@ public class LLVMGenerator {
         if(expNode instanceof IdNode) {
             IdNode idNode = (IdNode)expNode;
 
-            //((VarId)idNode.id).index;
-            //   %6 = load i32, i32* %2, align 4
-            currentIndex++;
             llvm += "%" + currentIndex + " = load " + getType(((VarId)idNode.id).type) + ", " +
                     getPointerForType(((VarId)idNode.id).type) + " %" + ((VarId)idNode.id).index + ", " +
                     getAlignForType(((VarId)idNode.id).type);
 
-            return currentIndex;
+            return currentIndex++;
         }
 
         if(expNode instanceof ConstNode) {
+            ConstNode constNode = (ConstNode)expNode;
+
             //   %1 = alloca i32, align 4
             //   store i32 0, i32* %1, align 4
-            return currentIndex;
+
+            switch (((PrimitiveType)constNode.getTypeNode()).type) {
+                case INT:
+                    llvm += "%" + currentIndex + " = " + "alloca " + getType(constNode.getTypeExp()) + ", " +
+                            getAlignForType(constNode.getTypeExp()) + "\n";
+                    llvm += "store " + getType(constNode.getTypeExp()) + " " + constNode.getValue() + ", " +
+                            getPointerForType(constNode.getTypeExp()) + " %" + currentIndex + ", " +
+                            getAlignForType(constNode.getTypeExp()) + "\n";
+                    break;
+                case FLOAT:
+                    llvm += "%" + currentIndex + " = " + "alloca " + getType(constNode.getTypeExp()) + ", " +
+                            getAlignForType(constNode.getTypeExp()) + "\n";
+                    llvm += "store " + getType(constNode.getTypeExp()) + " " +
+                            floatToHex(Double.parseDouble(constNode.getValue())) + ", " +
+                            getPointerForType(constNode.getTypeExp()) + " %" + currentIndex + ", " +
+                            getAlignForType(constNode.getTypeExp()) + "\n";
+                    break;
+                case BOOLEAN:
+                    llvm += "%" + currentIndex + " = " + "alloca " + getType(constNode.getTypeExp()) + ", " +
+                            getAlignForType(constNode.getTypeExp()) + "\n";
+                    llvm += "store " + getType(constNode.getTypeExp()) + " " +
+                            (constNode.getValue().equals("true") ? "1" : "0") + ", " +
+                            getPointerForType(constNode.getTypeExp()) + " %" + currentIndex + ", " +
+                            getAlignForType(constNode.getTypeExp()) + "\n";
+                    break;
+                case STRING:
+                    break;
+            }
+
+            return currentIndex++;
         }
 
         if(expNode instanceof FuncCallNode) {
@@ -300,7 +328,7 @@ public class LLVMGenerator {
 
             //   %3 = call i32 @c(i32 3)
 
-            return currentIndex;
+            return currentIndex++;
         }
 
         if(expNode instanceof ComplexOperand) {
@@ -309,7 +337,7 @@ public class LLVMGenerator {
             // TODO та же штука что и в assign только без store
             // load ....
 
-            return currentIndex;
+            return currentIndex++;
         }
 
         switch (expNode.operator) {
@@ -347,7 +375,7 @@ public class LLVMGenerator {
 
         }
 
-        return currentIndex;
+        return currentIndex++;
     }
 
     private static void generateDeclaration(DeclareVarNode declareVarNode) {
@@ -585,5 +613,9 @@ public class LLVMGenerator {
         long a = Math.abs(new Random().nextLong());
 
         return a;
+    }
+
+    private static String floatToHex(Double value){
+        return "0x"+Long.toHexString(Double.doubleToLongBits(value)).toUpperCase();
     }
 }
