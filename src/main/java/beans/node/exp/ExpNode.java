@@ -7,10 +7,10 @@ import beans.type.TypeVar;
  * Created by antonskripacev on 26.03.17.
  */
 public class ExpNode extends StatementNode {
-    private TypeVar typeExp;
-    private String operator;
-    private ExpNode firstOperand;
-    private ExpNode secondOperand;
+    public TypeVar typeExp;
+    public String operator;
+    public ExpNode firstOperand;
+    public ExpNode secondOperand;
     public int label;
     public int register;
 

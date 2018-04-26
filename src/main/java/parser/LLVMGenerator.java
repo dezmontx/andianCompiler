@@ -3,9 +3,7 @@ package parser;
 import beans.id.IdRow;
 import beans.id.VarId;
 import beans.node.*;
-import beans.node.exp.ExpNode;
-import beans.node.exp.FieldNode;
-import beans.node.exp.IdNode;
+import beans.node.exp.*;
 import beans.type.ArrayType;
 import beans.type.PrimitiveType;
 import beans.type.StructType;
@@ -270,8 +268,86 @@ public class LLVMGenerator {
         currentIndex++;
     }
 
-    private static void generateExpression(ExpNode expNode) {
+    private static int generateExpression(ExpNode expNode) {
+        if(expNode instanceof NewNode) {
+            NewNode newNode = (NewNode)expNode;
+            // TODO
 
+            return currentIndex;
+        }
+
+        if(expNode instanceof IdNode) {
+            IdNode idNode = (IdNode)expNode;
+
+            //((VarId)idNode.id).index;
+            //   %6 = load i32, i32* %2, align 4
+            currentIndex++;
+            llvm += "%" + currentIndex + " = load " + getType(((VarId)idNode.id).type) + ", " +
+                    getPointerForType(((VarId)idNode.id).type) + " %" + ((VarId)idNode.id).index + ", " +
+                    getAlignForType(((VarId)idNode.id).type);
+
+            return currentIndex;
+        }
+
+        if(expNode instanceof ConstNode) {
+            //   %1 = alloca i32, align 4
+            //   store i32 0, i32* %1, align 4
+            return currentIndex;
+        }
+
+        if(expNode instanceof FuncCallNode) {
+            FuncCallNode funcCallNode = (FuncCallNode)expNode;
+
+            //   %3 = call i32 @c(i32 3)
+
+            return currentIndex;
+        }
+
+        if(expNode instanceof ComplexOperand) {
+            ComplexOperand complexOperand = (ComplexOperand)expNode;
+
+            // TODO та же штука что и в assign только без store
+            // load ....
+
+            return currentIndex;
+        }
+
+        switch (expNode.operator) {
+            case "+":
+                /*int index1 = generateExpression(expNode.firstOperand);
+                int index2 = generateExpression(expNode.secondOperand);
+
+                currentIndex++;
+                // %currentIndex = add
+
+                return currentIndex;*/
+                break;
+            case "-":
+                break;
+            case "*":
+                break;
+            case "/":
+                break;
+            case "&":
+                break;
+            case "|":
+                break;
+            case ">":
+                break;
+            case ">=":
+                break;
+            case "<":
+                break;
+            case "<=":
+                break;
+            case "==":
+                break;
+            case "!=":
+                break;
+
+        }
+
+        return currentIndex;
     }
 
     private static void generateDeclaration(DeclareVarNode declareVarNode) {
