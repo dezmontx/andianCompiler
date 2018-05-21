@@ -340,39 +340,189 @@ public class LLVMGenerator {
             return currentIndex++;
         }
 
+        int firstIndexOperand = generateExpression(expNode.firstOperand);
+        int secondIndexOperand = generateExpression(expNode.secondOperand);
+
+        llvm+="%" + currentIndex + " = ";
+
+        currentIndex++;
+
         switch (expNode.operator) {
             case "+":
-                /*int index1 = generateExpression(expNode.firstOperand);
-                int index2 = generateExpression(expNode.secondOperand);
+                switch (((PrimitiveType) expNode.firstOperand.getTypeExp()).type) {
+                    case INT:
+                        llvm+="add nsw i32 ";
+                        break;
+                    case FLOAT:
+                        llvm+="fadd float ";
+                        break;
+                }
+                llvm += "%" + firstIndexOperand + ", %" + secondIndexOperand + "\n";
 
-                currentIndex++;
-                // %currentIndex = add
-
-                return currentIndex;*/
                 break;
             case "-":
+                switch (((PrimitiveType) expNode.firstOperand.getTypeExp()).type) {
+                    case INT:
+                        llvm+="sub nsw i32 ";
+                        break;
+                    case FLOAT:
+                        llvm+="fsub float ";
+                        break;
+                }
+                llvm += "%" + firstIndexOperand + ", %" + secondIndexOperand + "\n";
+
                 break;
             case "*":
+                switch (((PrimitiveType) expNode.firstOperand.getTypeExp()).type) {
+                    case INT:
+                        llvm+="mul nsw i32 ";
+                        break;
+                    case FLOAT:
+                        llvm+="fmul float ";
+                        break;
+                }
+                llvm += "%" + firstIndexOperand + ", %" + secondIndexOperand + "\n";
+
                 break;
             case "/":
+                switch (((PrimitiveType) expNode.firstOperand.getTypeExp()).type) {
+                    case INT:
+                        llvm+="sdiv nsw i32 ";
+                        break;
+                    case FLOAT:
+                        llvm+="fdiv float ";
+                        break;
+                }
+                llvm += "%" + firstIndexOperand + ", %" + secondIndexOperand + "\n";
+
                 break;
+            case "&&":
+                //zext i1 to i32
+                llvm += "%" + currentIndex  + " = zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                //operation
+                //%5 = load i32, i32* %2, align 4
+                llvm += "%" + currentIndex + "load i32, i32* %2, align 4 \n";
+                currentIndex++;
+
+                //#Check if first operand not equal to zero
+                //%6 = icmp ne i32 %5, 0
+                llvm += "%" + currentIndex + " = icmp ne i32" + (currentIndex-1) + ", 0\n";
+                currentIndex++;
+
+                //#if equal go to end else check second value and go to the end
+                //br i1 %6, label %7, label %10
+                llvm += "br i1 %" + (currentIndex-1) + ", label %" + currentIndex + ", label %" + (currentIndex + 3) + "\n";
+
+                //  %12 = zext i1 %11 to i32
+//                store i32 %12, i32* %4, align 4
+                //; <label>:7:
+                llvm += "; <label>:" + currentIndex + ":" + "\n";
+                currentIndex++;
+                //%8 = load i32, i32* %3, align 4
+                llvm += "%" + currentIndex + "= load i32, i32* %" + secondIndexOperand + ", align 4\n";
+                currentIndex++;
+                //%9 = icmp ne i32 %8, 0
+                llvm += "%" + currentIndex + " = icmp ne i32" + (currentIndex-1) + ", 0\n";
+                currentIndex++;
+                //br label %10
+                llvm += "br label %" + currentIndex;
+                //; <label>:10:
+                llvm += "; <label>:" + currentIndex + ":" + "\n";
+                currentIndex++;
+                //%11 = phi i1 [ false, %0 ], [ %9, %7 ]
+                llvm += "%" + currentIndex + " = phi i1 [false, %0], [ %" + (currentIndex - 2) + ", %" + (currentIndex - 4) + " ]\n";
+                currentIndex++;
+                //? а надо ли переводить обратно в i32??
+                llvm += "%" + currentIndex + " = zext i1 %" + (currentIndex - 1) + " to i32\n";
+                currentIndex++;
+
+                break;
+            case "<":
+                llvm += "zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "%" + currentIndex  + " = zext %" + secondIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "%" + currentIndex + " = icmp slt i32 %" + (currentIndex -2) + ", %" + (currentIndex - 1) + "\n";
+
+                break;
+            case ">":
+                llvm += "zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "%" + currentIndex  + " = zext %" + secondIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "%" + currentIndex + " = icmp sgt i32 %" + (currentIndex -2) + ", %" + (currentIndex - 1) + "\n";
+
+                break;
+            case "<=":
+                llvm += "zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "%" + currentIndex  + " = zext %" + secondIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "%" + currentIndex + " = icmp sle i32 %" + (currentIndex -2) + ", %" + (currentIndex - 1) + "\n";
+
+                break;
+            case ">=":
+                llvm += "zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "%" + currentIndex  + " = zext %" + secondIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "%" + currentIndex + " = icmp eq i32 %" + (currentIndex -2) + ", %" + (currentIndex - 1) + "\n";
+
+                break;
+            case "==":
+                llvm += "zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "%" + currentIndex  + " = zext %" + secondIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "%" + currentIndex + " = icmp eq i32 %" + (currentIndex -2) + ", %" + (currentIndex - 1) + "\n";
+
+                break;
+            case "!=":
+
+                llvm += "zext %" + firstIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "%" + currentIndex  + " = zext %" + secondIndexOperand + " to i32\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i32, i32* %" + (currentIndex - 2) + ", align 4\n";
+                currentIndex++;
+                llvm += "%" + currentIndex + " = icmp ne i32 %" + (currentIndex -2) + ", %" + (currentIndex - 1) + "\n";
+
+                break;
+
             case "&":
+                llvm += "load i1, i1* %" + firstIndexOperand + ", align 1\n";
+                currentIndex++;
+                llvm += "% " + currentIndex + " = load i1, i1* %" + secondIndexOperand + ", align 4\n";
+                llvm += "% " + currentIndex + " = and i1";
+//                  %5 = load i32, i32* %2, align 4
+//                    %6 = load i32, i32* %3, align 4
+//                    %7 = and i32 %5, %6
                 break;
             case "|":
                 break;
-            case ">":
-                break;
-            case ">=":
-                break;
-            case "<":
-                break;
-            case "<=":
-                break;
-            case "==":
-                break;
-            case "!=":
-                break;
-
         }
 
         return currentIndex++;
@@ -442,7 +592,7 @@ public class LLVMGenerator {
                     llvm += "%" + currentIndex + " = sext i32 %" + indexExp + " to i64\n";
                     indexExp = currentIndex++;
                     llvm += "%" + currentIndex + " = getelementptr inbounds " + getType(typeVar, curLevelOfArray) + ", "
-                    + getPointerForType(typeVar, curLevelOfArray) + " %" + indexBase + ", i64" + " %" + indexExp + "\n";
+                            + getPointerForType(typeVar, curLevelOfArray) + " %" + indexBase + ", i64" + " %" + indexExp + "\n";
 
                     String type = getType(typeVar, curLevelOfArray);
 
